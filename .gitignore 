@@ -1,0 +1,31 @@
+# File: .gitignore
+#
+# Purpose: Specifies intentionally untracked files to ignore in Git
+
+# Ignore the actual .env file containing sensitive information
+.env
+
+# Ignore common development files and directories
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore any local configuration files
+*.local
+
+# Ignore log files
+*.log
+
+# Ignore build output directories
+/dist
+/build
+
+# Ignore IDE and editor specific files
+.vscode/
+.idea/
+*.swp
+*.swo
