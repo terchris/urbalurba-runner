@@ -1,0 +1,24 @@
+name: Test Runner (Node & Python)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-node:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Run Node.js Hello World
+        run: node tests/node/hello-world.js
+
+  test-python:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Run Python Hello World
+        run: python3 tests/python/hello-world.py
