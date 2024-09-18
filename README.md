@@ -1,7 +1,7 @@
 # urbalurba-runner
 
 ## Overview
-urbalurba-runner is a containerized GitHub Actions runner designed to monitor and build repositories within a specified GitHub repository. It provides a flexible, self-hosted solution for running GitHub Actions workflows, with a focus on building and deploying containers to a local microk8s registry.
+urbalurba-runner is a containerized GitHub Actions runner designed to monitor and build repositories within a specified GitHub repository. It provides a flexible, self-hosted solution for running GitHub Actions workflows, with a focus on building and deploying containers to a local microk8s registry. This runner supports multi-architecture builds, allowing it to create containers that can run on both ARM64 and AMD64 systems.
 
 ## Features
 - Self-hosted GitHub Actions runner in a Docker container
@@ -9,13 +9,13 @@ urbalurba-runner is a containerized GitHub Actions runner designed to monitor an
 - Configurable to build and push containers to a local microk8s registry
 - Customizable through environment variables
 - Includes a self-test mechanism for easy verification
-- Optimized for ARM64 architecture (e.g., Apple Silicon Macs)
+- Supports multi-architecture builds (ARM64 and AMD64)
 
 ## Prerequisites
 - Docker
+- Docker Buildx (for multi-architecture builds)
 - GitHub Personal Access Token (PAT) with appropriate permissions
 - (Optional) microk8s cluster with registry addon enabled
-- ARM64-based system (e.g., Apple Silicon Mac)
 
 ## Quick Start
 1. Clone the repository:
@@ -28,7 +28,7 @@ urbalurba-runner is a containerized GitHub Actions runner designed to monitor an
 
 3. Build the Docker image:
    ```
-   docker build -t urbalurba-runner .
+   ./build.sh
    ```
 
 4. Run the container:
@@ -56,7 +56,15 @@ The runner is configured using environment variables stored in a `.env` file.
 - `GITHUB_OWNER`: (Required) GitHub username
 - `GITHUB_REPO`: (Required) Repository name
 - `RUNNER_NAME`: (Optional) Custom name for the runner (default: hostname)
-- `RUNNER_LABELS`: (Optional) Custom labels for the runner (default: self-hosted,Linux,ARM64)
+- `RUNNER_LABELS`: (Optional) Custom labels for the runner (default: self-hosted,Linux)
+- `BUILD_ARCHITECTURE`: (Optional) Specify build architecture(s) (default: multi)
+
+### Build Architecture Options
+The `BUILD_ARCHITECTURE` variable in the `.env` file allows you to control which architectures to build for:
+- `multi`: Builds for both ARM64 and AMD64 (default)
+- `arm64`: Builds only for ARM64
+- `amd64`: Builds only for AMD64
+- `arm64,amd64`: Explicitly specify multiple architectures
 
 ### Obtaining GITHUB_PAT
 To obtain a GitHub Personal Access Token (PAT):
@@ -74,6 +82,15 @@ To obtain a GitHub Personal Access Token (PAT):
 
 **Important**: Keep your PAT secure and never share it publicly. Choose an expiration date appropriate for your use case.
 
+## Building the Runner
+To build the runner, use the provided build script:
+
+```bash
+./build.sh
+```
+
+This script reads the `BUILD_ARCHITECTURE` from your `.env` file and builds the appropriate image(s). It uses Docker Buildx to create multi-architecture images when specified.
+
 ## Testing API Access
 Before running the container, you can test your API access using curl:
 
@@ -83,24 +100,15 @@ curl -H "Authorization: token YOUR_PAT_HERE" https://api.github.com/repos/OWNER/
 
 Replace `YOUR_PAT_HERE` with your Personal Access Token, `OWNER` with your GitHub username, and `REPO` with your repository name.
 
-If successful, this will return detailed information about your repository, confirming that your token has the correct permissions.
-
-**Important Security Note:** Never share your Personal Access Token publicly or commit it to your repository. Always use environment variables or secure secrets management systems to handle sensitive information like tokens.
-
 ## Understanding Runner Labels
-RUNNER_LABELS categorize the runner and determine which jobs it can execute:
-
-1. Assign labels to the runner (e.g., "self-hosted,Linux,ARM64")
-2. In GitHub Actions workflows, use the `runs-on` key to specify required labels
-3. GitHub dispatches jobs to runners with matching labels
+RUNNER_LABELS categorize the runner and determine which jobs it can execute. Use the `runs-on` key in your GitHub Actions workflows to target specific runners.
 
 Example workflow snippet:
 ```yaml
 jobs:
   build:
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: [self-hosted, Linux]
 ```
-This job will only run on self-hosted runners with "self-hosted", "Linux", and "ARM64" labels.
 
 ## Self-Test Mechanism
 The repository includes a self-test to verify the runner's functionality:
@@ -112,8 +120,6 @@ To run the self-test:
 1. Ensure your runner is operational
 2. Push a commit to the main branch or manually trigger the "Test Runner (Node.js)" workflow from the Actions tab
 3. Check the Actions tab for successful execution
-
-A successful run with "Hello, World!" output in the job logs confirms correct setup.
 
 ## Usage with microk8s
 (Detailed instructions for microk8s setup and usage will be added in future updates)
