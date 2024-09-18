@@ -12,13 +12,14 @@
 #       - "arm64": Builds only for ARM64
 #       - "amd64": Builds only for AMD64
 #       - "arm64,amd64": Explicitly specify multiple architectures
+#   CONTAINER_NAME: The name to use for the Docker container
 #
 # This script does the following:
 # 1. Loads environment variables from .env file
 # 2. Sets up Docker buildx for multi-architecture builds
 # 3. Determines which platforms to build for based on BUILD_ARCHITECTURE
 # 4. Builds the Docker image(s) locally
-# 5. Provides instructions for running the built container
+# 5. Provides instructions for running the built container with the specified name
 
 # Load environment variables
 source .env
@@ -48,4 +49,4 @@ echo "Building for platforms: $PLATFORMS"
 docker buildx build --platform $PLATFORMS -t urbalurba-runner:latest --load .
 
 echo "Build complete. You can now run the container using:"
-echo "docker run --env-file .env urbalurba-runner:latest"
+echo "docker run --name $CONTAINER_NAME --env-file .env urbalurba-runner:latest"
