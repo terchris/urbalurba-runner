@@ -3,16 +3,15 @@
 #
 # Purpose: This script configures and starts the GitHub Actions runner.
 # It uses environment variables to set up the runner for a specific
-# GitHub organization or repository.
-#
-# Required environment variables:
-#   GITHUB_PAT: Personal Access Token for GitHub
-#   GITHUB_ORG: GitHub organization name
-#
-# Optional environment variables:
-#   GITHUB_REPO: Specific repository name (if not set, runner will be configured for the entire org)
-#   RUNNER_NAME: Name for this runner (default: hostname)
-#   RUNNER_LABELS: Custom labels for the runner (comma-separated)
+# GitHub repository under a personal account.
+
+# Print debug information
+echo "Debug Information:"
+echo "GITHUB_OWNER: $GITHUB_OWNER"
+echo "GITHUB_REPO: $GITHUB_REPO"
+echo "RUNNER_NAME: $RUNNER_NAME"
+echo "RUNNER_LABELS: $RUNNER_LABELS"
+echo "PAT starts with: ${GITHUB_PAT:0:4}..."
 
 # Check for required environment variables
 if [ -z "$GITHUB_PAT" ]; then
@@ -20,27 +19,34 @@ if [ -z "$GITHUB_PAT" ]; then
     exit 1
 fi
 
-if [ -z "$GITHUB_ORG" ]; then
-    echo "Error: GITHUB_ORG environment variable is not set."
+if [ -z "$GITHUB_OWNER" ]; then
+    echo "Error: GITHUB_OWNER environment variable is not set."
+    exit 1
+fi
+
+if [ -z "$GITHUB_REPO" ]; then
+    echo "Error: GITHUB_REPO environment variable is not set."
     exit 1
 fi
 
 # Set default values for optional variables
 RUNNER_NAME=${RUNNER_NAME:-$(hostname)}
-RUNNER_LABELS=${RUNNER_LABELS:-"self-hosted,Linux,X64"}
+RUNNER_LABELS=${RUNNER_LABELS:-"self-hosted,Linux,ARM64"}
 
-# Determine if we're setting up for an org or a specific repo
-if [ -z "$GITHUB_REPO" ]; then
-    RUNNER_URL="https://github.com/${GITHUB_ORG}"
-else
-    RUNNER_URL="https://github.com/${GITHUB_ORG}/${GITHUB_REPO}"
-fi
+RUNNER_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}"
+
+echo "Runner URL: $RUNNER_URL"
 
 # Get a new runner token
 RUNNER_TOKEN=$(curl -s -X POST -H "Authorization: token ${GITHUB_PAT}" \
     -H "Accept: application/vnd.github.v3+json" \
-    "https://api.github.com/orgs/${GITHUB_ORG}/actions/runners/registration-token" \
+    "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runners/registration-token" \
     | jq -r .token)
+
+if [ -z "$RUNNER_TOKEN" ] || [ "$RUNNER_TOKEN" == "null" ]; then
+    echo "Error: Failed to obtain runner token. Please check your PAT and permissions."
+    exit 1
+fi
 
 # Configure the runner
 ./config.sh \

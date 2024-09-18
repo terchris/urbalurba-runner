@@ -1,19 +1,21 @@
 # urbalurba-runner
 
 ## Overview
-urbalurba-runner is a containerized GitHub Actions runner designed to monitor and build repositories within a specified GitHub organization. It provides a flexible, self-hosted solution for running GitHub Actions workflows, with a focus on building and deploying containers to a local microk8s registry.
+urbalurba-runner is a containerized GitHub Actions runner designed to monitor and build repositories within a specified GitHub repository. It provides a flexible, self-hosted solution for running GitHub Actions workflows, with a focus on building and deploying containers to a local microk8s registry.
 
 ## Features
 - Self-hosted GitHub Actions runner in a Docker container
-- Monitors repositories in the specified GitHub organization
+- Monitors a specific GitHub repository
 - Configurable to build and push containers to a local microk8s registry
 - Customizable through environment variables
 - Includes a self-test mechanism for easy verification
+- Optimized for ARM64 architecture (e.g., Apple Silicon Macs)
 
 ## Prerequisites
 - Docker
 - GitHub Personal Access Token (PAT) with appropriate permissions
 - (Optional) microk8s cluster with registry addon enabled
+- ARM64-based system (e.g., Apple Silicon Mac)
 
 ## Quick Start
 1. Clone the repository:
@@ -34,19 +36,6 @@ urbalurba-runner is a containerized GitHub Actions runner designed to monitor an
    docker run --env-file .env urbalurba-runner
    ```
 
-### Note for Apple Silicon (M1/M2) Mac Users
-If you're using an Apple Silicon Mac, you may encounter issues related to architecture incompatibility. To resolve this:
-
-1. Install Docker with Rosetta 2 support.
-2. Build the image with the `--platform` flag:
-   ```
-   docker build --platform linux/amd64 -t urbalurba-runner .
-   ```
-3. Run the container with the `--platform` flag:
-   ```
-   docker run --platform linux/amd64 --env-file .env urbalurba-runner
-   ```
-
 ## Configuration
 The runner is configured using environment variables stored in a `.env` file.
 
@@ -64,60 +53,44 @@ The runner is configured using environment variables stored in a `.env` file.
 
 ### Configuration Variables:
 - `GITHUB_PAT`: (Required) GitHub Personal Access Token
-- `GITHUB_ORG`: (Required) GitHub organization name
-- `GITHUB_REPO`: (Optional) Specific repository to monitor (initially set to urbalurba-runner for testing)
+- `GITHUB_OWNER`: (Required) GitHub username
+- `GITHUB_REPO`: (Required) Repository name
 - `RUNNER_NAME`: (Optional) Custom name for the runner (default: hostname)
-- `RUNNER_LABELS`: (Optional) Custom labels for the runner (default: self-hosted,Linux,X64)
+- `RUNNER_LABELS`: (Optional) Custom labels for the runner (default: self-hosted,Linux,ARM64)
 
 ### Obtaining GITHUB_PAT
 To obtain a GitHub Personal Access Token (PAT):
 
 1. Log in to your GitHub account
 2. Go to [Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
-3. Click "Generate new token"
-4. Choose the token type:
-   - For most users, select "Generate new token (classic)"
-   - If you need fine-grained permissions, select "Generate new token (Beta)" - this is recommended for advanced users who want to limit the token's scope to specific repositories
-
-For "Generate new token (classic)":
-5. Give your token a descriptive name
+3. Click "Generate new token (classic)"
+4. Give your token a descriptive name
+5. Set the expiration as needed
 6. Select the following scopes:
-   - repo (all)
-   - workflow
-   - admin:org > manage_runners:org
+   - `repo` (Full control of private repositories)
+   - `workflow` (Update GitHub Action workflows)
 7. Click "Generate token"
 8. Copy the token immediately (you won't be able to see it again)
 
-For "Generate new token (Beta)":
-5. Give your token a descriptive name
-6. Set the expiration as needed
-7. Select the specific repository or all repositories in your organization
-8. Under "Repository permissions", set:
-   - Actions: Read and Write
-   - Administration: Read and Write
-   - Contents: Read and Write
-   - Metadata: Read-only (automatically selected)
-9. Under "Organization permissions", set:
-   - Self-hosted runners: Read and Write
-10. Click "Generate token"
-11. Copy the token immediately (you won't be able to see it again)
-
 **Important**: Keep your PAT secure and never share it publicly. Choose an expiration date appropriate for your use case.
 
-### Note on GITHUB_REPO
-The `GITHUB_REPO` is initially set to `urbalurba-runner` for testing. After verifying functionality:
+## Testing API Access
+Before running the container, you can test your API access using curl:
 
-1. Stop the runner container
-2. Edit your `.env` file
-3. Change `GITHUB_REPO`:
-   - Set to another repository name for specific monitoring
-   - Leave blank to monitor the entire organization
-4. Restart the runner container
+```bash
+curl -H "Authorization: token YOUR_PAT_HERE" https://api.github.com/repos/OWNER/REPO
+```
+
+Replace `YOUR_PAT_HERE` with your Personal Access Token, `OWNER` with your GitHub username, and `REPO` with your repository name.
+
+If successful, this will return detailed information about your repository, confirming that your token has the correct permissions.
+
+**Important Security Note:** Never share your Personal Access Token publicly or commit it to your repository. Always use environment variables or secure secrets management systems to handle sensitive information like tokens.
 
 ## Understanding Runner Labels
 RUNNER_LABELS categorize the runner and determine which jobs it can execute:
 
-1. Assign labels to the runner (e.g., "self-hosted,Linux,X64")
+1. Assign labels to the runner (e.g., "self-hosted,Linux,ARM64")
 2. In GitHub Actions workflows, use the `runs-on` key to specify required labels
 3. GitHub dispatches jobs to runners with matching labels
 
@@ -125,9 +98,9 @@ Example workflow snippet:
 ```yaml
 jobs:
   build:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, Linux, ARM64]
 ```
-This job will only run on self-hosted runners with both "self-hosted" and "Linux" labels.
+This job will only run on self-hosted runners with "self-hosted", "Linux", and "ARM64" labels.
 
 ## Self-Test Mechanism
 The repository includes a self-test to verify the runner's functionality:
@@ -140,7 +113,7 @@ To run the self-test:
 2. Push a commit to the main branch or manually trigger the "Test Runner (Node.js)" workflow from the Actions tab
 3. Check the Actions tab for successful execution
 
-A successful run with "Hello, World!" output in the job logs confirms correct setup, specifically for Node.js jobs using the latest LTS version (Node.js 20 as of 2024).
+A successful run with "Hello, World!" output in the job logs confirms correct setup.
 
 ## Usage with microk8s
 (Detailed instructions for microk8s setup and usage will be added in future updates)
@@ -156,17 +129,11 @@ To flag a repository for building:
 - GitHub Actions workflows are configured to use the latest stable versions of actions
 - To contribute or test locally, ensure you have Node.js 20 installed
 
-## Future Plans
-- Implement automatic deployment to microk8s cluster
-- Add support for monitoring multiple organizations
-- Enhance logging and monitoring capabilities
-- Expand test suite to cover more scenarios and languages
-
 ## Contributing
 Contributions to urbalurba-runner are welcome! Please feel free to submit pull requests or create issues for bugs and feature requests.
 
 ## License
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License.
 
 ## Support
 For questions or support, please open an issue in the GitHub repository.
