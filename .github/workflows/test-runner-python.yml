@@ -1,0 +1,44 @@
+# File: .github/workflows/test-runner-python.yml
+#
+# Purpose:
+# This GitHub Actions workflow runs a simple Python test from the repository.
+# It verifies that the Python environment is correctly set up and can execute
+# basic scripts as part of the CI process. Specifically, it runs the
+# 'hello-world.py' script, which outputs a greeting and the current time.
+#
+# Workflow usage:
+# This workflow is triggered on any push or pull request to the 'main' branch.
+# It sets up the required environment and runs the Python script from
+# 'tests/python/hello-world.py'.
+
+name: Test Runner Python
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    # This job runs on an Ubuntu machine in GitHub's cloud environment
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Check out the code from the repository
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up the Python environment
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        # The version of Python to be installed
+        python-version: '3.x'
+
+    # Step 3: Run the Python 'hello-world.py' script
+    - name: Run Python Hello World
+      run: |
+        python tests/python/hello-world.py
