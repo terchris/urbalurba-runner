@@ -34,6 +34,19 @@ urbalurba-runner is a containerized GitHub Actions runner designed to monitor an
    docker run --env-file .env urbalurba-runner
    ```
 
+### Note for Apple Silicon (M1/M2) Mac Users
+If you're using an Apple Silicon Mac, you may encounter issues related to architecture incompatibility. To resolve this:
+
+1. Install Docker with Rosetta 2 support.
+2. Build the image with the `--platform` flag:
+   ```
+   docker build --platform linux/amd64 -t urbalurba-runner .
+   ```
+3. Run the container with the `--platform` flag:
+   ```
+   docker run --platform linux/amd64 --env-file .env urbalurba-runner
+   ```
+
 ## Configuration
 The runner is configured using environment variables stored in a `.env` file.
 

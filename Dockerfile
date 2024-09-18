@@ -27,7 +27,8 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     python3-pip \
     git \
-    sudo
+    sudo \
+    libicu-dev
 
 # Create a user for the runner
 RUN useradd -m github-runner && \
