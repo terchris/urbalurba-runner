@@ -41,14 +41,17 @@ RUN ARCH=$(dpkg --print-architecture) && \
     tar xzf ./actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz && \
     rm actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz
 
+# Install latest debug package to resolve warning
+RUN sudo npm install -g debug@latest
+
 # Install Azure Functions Core Tools
-ARG INSTALL_AZURE_FUNCTIONS=false
-RUN if [ "$INSTALL_AZURE_FUNCTIONS" = "true" ]; then \
-    sudo npm install -g azure-functions-core-tools@4 --unsafe-perm true && \
+RUN sudo npm install -g azure-functions-core-tools@latest --unsafe-perm true && \
     echo "export PATH=$PATH:/home/github-runner/.npm-global/bin" >> ~/.bashrc && \
-    . ~/.bashrc && \
-    func --version; \
-    fi
+    . ~/.bashrc
+
+# Verify installations
+RUN npm list -g --depth=0 && \
+    func --version
 
 # Copy the startup script
 COPY --chown=github-runner:github-runner start.sh .

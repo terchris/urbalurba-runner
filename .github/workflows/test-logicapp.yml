@@ -13,18 +13,6 @@ jobs:
       - name: Verify Azure Functions Core Tools installation
         run: func --version
 
-      - name: Setup Logic App project
-        run: |
-          mkdir -p tests/logicapp
-          cp workflow.json tests/logicapp/
-          echo '{
-            "IsEncrypted": false,
-            "Values": {
-              "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-              "FUNCTIONS_WORKER_RUNTIME": "node"
-            }
-          }' > tests/logicapp/local.settings.json
-
       - name: Start Logic App
         run: |
           cd tests/logicapp
