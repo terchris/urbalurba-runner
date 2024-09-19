@@ -8,7 +8,7 @@ urbalurba-runner is a containerized GitHub Actions runner designed to monitor an
 - Monitors a specific GitHub repository
 - Configurable to build and push containers to a local microk8s registry
 - Customizable through environment variables
-- Includes a self-test mechanism for easy verification
+- Includes a self-test mechanism for easy verification (Node.js, Python, and C#)
 - Supports multi-architecture builds (ARM64 and AMD64)
 
 ## Prerequisites
@@ -33,7 +33,7 @@ urbalurba-runner is a containerized GitHub Actions runner designed to monitor an
 
 4. Run the container:
    ```
-   docker run --env-file .env urbalurba-runner
+   docker run --name urbalurba-runner --env-file .env urbalurba-runner:latest
    ```
 
 ## Configuration
@@ -111,15 +111,17 @@ jobs:
 ```
 
 ## Self-Test Mechanism
-The repository includes a self-test to verify the runner's functionality:
+The repository includes self-tests to verify the runner's functionality:
 
 1. `tests/node/hello-world.js`: A simple Node.js program
-2. `.github/workflows/test-runner-node.yml`: A workflow that runs the Node.js program
+2. `tests/python/hello-world.py`: A simple Python program
+3. `tests/csharp/hello-world.cs`: A simple C# program
+4. `.github/workflows/test-runner.yml`: A workflow that runs the Node.js, Python, and C# programs
 
-To run the self-test:
+To run the self-tests:
 1. Ensure your runner is operational
-2. Push a commit to the main branch or manually trigger the "Test Runner (Node.js)" workflow from the Actions tab
-3. Check the Actions tab for successful execution
+2. Push a commit to the main branch or manually trigger the "Test Runner (Node, Python & C#)" workflow from the Actions tab
+3. Check the Actions tab for successful execution of all three tests
 
 ## Usage with microk8s
 (Detailed instructions for microk8s setup and usage will be added in future updates)
@@ -132,8 +134,10 @@ To flag a repository for building:
 
 ## Development and Testing
 - The project uses Node.js 20 (LTS as of 2024) for testing
+- Python 3 is used for Python tests
+- .NET 8.0 is used for C# tests
 - GitHub Actions workflows are configured to use the latest stable versions of actions
-- To contribute or test locally, ensure you have Node.js 20 installed
+- To contribute or test locally, ensure you have Node.js 20, Python 3, and .NET 8.0 installed
 
 ## Contributing
 Contributions to urbalurba-runner are welcome! Please feel free to submit pull requests or create issues for bugs and feature requests.
