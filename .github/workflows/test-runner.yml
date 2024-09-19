@@ -52,6 +52,7 @@ jobs:
 
         - name: Compile and Run C# Hello World
           run: |
-            dotnet new console -o tests/csharp -n HelloWorld
-            cp tests/csharp/hello-world.cs tests/csharp/Program.cs
-            dotnet run --project tests/csharp
+            cd tests/csharp
+            dotnet new console --no-restore --force
+            cp hello-world.cs Program.cs
+            dotnet run
