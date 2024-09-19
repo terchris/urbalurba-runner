@@ -46,7 +46,9 @@ fi
 echo "Building for platforms: $PLATFORMS"
 
 # Build multi-architecture image locally
-docker buildx build --platform $PLATFORMS -t urbalurba-runner:latest --load .
+docker buildx build --platform $PLATFORMS -t urbalurba-runner:latest \
+    --build-arg INSTALL_AZURE_FUNCTIONS=true \
+    --load .
 
 echo "Build complete. You can now run the container using:"
 echo "docker run --name $CONTAINER_NAME --env-file .env urbalurba-runner:latest"

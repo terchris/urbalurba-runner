@@ -14,7 +14,9 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     git \
     sudo \
-    libicu-dev
+    libicu-dev \
+    nodejs \
+    npm
 
 # Create a user for the runner
 RUN useradd -m github-runner && \
@@ -38,6 +40,15 @@ RUN ARCH=$(dpkg --print-architecture) && \
     curl -O -L https://github.com/actions/runner/releases/download/v${LATEST_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz && \
     tar xzf ./actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz && \
     rm actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz
+
+# Install Azure Functions Core Tools
+ARG INSTALL_AZURE_FUNCTIONS=false
+RUN if [ "$INSTALL_AZURE_FUNCTIONS" = "true" ]; then \
+    sudo npm install -g azure-functions-core-tools@4 --unsafe-perm true && \
+    echo "export PATH=$PATH:/home/github-runner/.npm-global/bin" >> ~/.bashrc && \
+    . ~/.bashrc && \
+    func --version; \
+    fi
 
 # Copy the startup script
 COPY --chown=github-runner:github-runner start.sh .
