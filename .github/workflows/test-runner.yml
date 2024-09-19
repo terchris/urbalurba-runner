@@ -10,15 +10,19 @@ jobs:
   test-node:
     runs-on: [self-hosted, Linux]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Run Node.js Hello World
-        run: node tests/node/hello-world.js
+        - uses: actions/checkout@v4
+        - name: Use Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '20'
+        - name: Run hello-world.js
+          run: node tests/node/hello-world.js
+
 
   test-python:
     runs-on: [self-hosted, Linux]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Run Python Hello World
         run: python3 tests/python/hello-world.py
