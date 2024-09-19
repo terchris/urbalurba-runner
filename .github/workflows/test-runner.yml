@@ -1,5 +1,4 @@
 # File: .github/workflows/test-runner.yml
-
 name: Test Runner (Node, Python & C#)
 
 on:
@@ -34,16 +33,14 @@ jobs:
         - name: Checkout repository
           uses: actions/checkout@v4
         
-        - name: Setup .NET
-          uses: actions/setup-dotnet@v4
-          with:
-            dotnet-version: '8.0.x'
-
         - name: Restore dependencies
           run: dotnet restore tests/csharp/HelloWorld.csproj
 
-        - name: Build
+        - name: Build project
           run: dotnet build tests/csharp/HelloWorld.csproj --configuration Release --no-restore
 
-        - name: Run
+        - name: Run tests
+          run: dotnet test tests/csharp/HelloWorld.csproj --configuration Release --no-build --verbosity normal
+
+        - name: Run project
           run: dotnet run --project tests/csharp/HelloWorld.csproj --configuration Release --no-build

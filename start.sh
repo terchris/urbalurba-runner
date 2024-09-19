@@ -1,9 +1,7 @@
 #!/bin/bash
 # File: start.sh
 #
-# Purpose: This script configures and starts the GitHub Actions runner.
-# It uses environment variables to set up the runner for a specific
-# GitHub repository under a personal account.
+# Pre-installing the .NET SDK for the runner
 
 # Print debug information
 echo "Debug Information:"
@@ -36,6 +34,14 @@ RUNNER_LABELS=${RUNNER_LABELS:-"self-hosted,Linux,ARM64"}
 RUNNER_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}"
 
 echo "Runner URL: $RUNNER_URL"
+
+# Pre-install .NET SDK (version 8.0)
+echo "Installing .NET SDK..."
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir /usr/share/dotnet
+
+# Add .NET to PATH
+echo "Adding .NET SDK to PATH"
+export PATH="/usr/share/dotnet:$PATH"
 
 # Get a new runner token
 RUNNER_TOKEN=$(curl -s -X POST -H "Authorization: token ${GITHUB_PAT}" \
