@@ -1,0 +1,33 @@
+# File: .github/workflows/test-csharp.yml
+
+name: C# Test
+
+on:
+  workflow_call:
+
+jobs:
+  test-csharp:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Verify .NET SDK installation
+        run: |
+          dotnet --version
+          if [ $? -ne 0 ]; then
+            echo "Error: .NET SDK is not properly installed or configured."
+            exit 1
+          fi
+
+      - name: Restore dependencies
+        run: dotnet restore tests/csharp/HelloWorld.csproj
+
+      - name: Build project
+        run: dotnet build tests/csharp/HelloWorld.csproj --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test tests/csharp/HelloWorld.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Run project
+        run: dotnet run --project tests/csharp/HelloWorld.csproj --configuration Release --no-build

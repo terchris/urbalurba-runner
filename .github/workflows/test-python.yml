@@ -1,0 +1,15 @@
+# File: .github/workflows/test-python.yml
+
+name: Python Test
+
+on:
+  workflow_call:
+
+jobs:
+  test-python:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run Python Hello World
+        run: python3 tests/python/hello-world.py

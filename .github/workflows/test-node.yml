@@ -1,0 +1,18 @@
+# File: .github/workflows/test-node.yml
+
+name: Node.js Test
+
+on:
+  workflow_call:
+
+jobs:
+  test-node:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run hello-world.js
+        run: node tests/node/hello-world.js

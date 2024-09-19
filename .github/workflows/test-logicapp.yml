@@ -1,0 +1,52 @@
+# File: .github/workflows/test-logicapp.yml
+
+name: Logic App Test
+
+on:
+  workflow_call:
+
+jobs:
+  test-logic-app:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Azure Functions Core Tools
+        run: |
+          sudo npm install -g azure-functions-core-tools@4
+          echo "PATH=$PATH:/home/github-runner/.npm-global/bin" >> $GITHUB_ENV
+          source $GITHUB_ENV
+          func --version
+
+      - name: Setup Logic App project
+        run: |
+          mkdir -p tests/logicapp/workflow
+          cp tests/logicapp/workflow.json tests/logicapp/workflow/
+          cp tests/logicapp/local.settings.json tests/logicapp/workflow/
+
+      - name: Start Logic App
+        run: |
+          cd tests/logicapp/workflow
+          func start --javascript &
+          sleep 30
+
+      - name: Test Logic App
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:7071/api/workflow_trigger)
+          if [ $RESPONSE -eq 200 ]; then
+            echo "Logic App test passed"
+            exit 0
+          else
+            echo "Logic App test failed"
+            exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: pkill -f "func start"

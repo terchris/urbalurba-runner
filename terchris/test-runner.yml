@@ -1,7 +1,7 @@
 # File: .github/workflows/test-runner.yml
 #
-# Purpose: This workflow runs tests for Node.js, Python, C#, and a Logic App using Azure Functions Core Tools.
-# It uses a self-hosted runner on Linux to execute these tests.
+# Purpose: This workflow runs tests for Node.js, Python, C#, and a Logic App.
+# It uses a self-hosted runner on Linux (ARM64) to execute these tests.
 
 name: Test Runner (Node, Python, C# & Logic App)
 
@@ -66,18 +66,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install Azure Functions Core Tools
         run: |
-          npm install -g azure-functions-core-tools@4
+          sudo npm install -g azure-functions-core-tools@4
+          echo "PATH=$PATH:/home/github-runner/.npm-global/bin" >> $GITHUB_ENV
+          source $GITHUB_ENV
           func --version
 
       - name: Setup Logic App project
         run: |
           mkdir -p tests/logicapp/workflow
           cp tests/logicapp/workflow.json tests/logicapp/workflow/
-          echo '{"IsEncrypted":false,"Values":{"AzureWebJobsStorage":"","FUNCTIONS_WORKER_RUNTIME":"node"}}' > tests/logicapp/workflow/local.settings.json
+          echo '{"IsEncrypted":false,"Values":{"AzureWebJobsStorage":"UseDevelopmentStorage=true","FUNCTIONS_WORKER_RUNTIME":"node"}}' > tests/logicapp/workflow/local.settings.json
 
       - name: Start Logic App
         run: |
