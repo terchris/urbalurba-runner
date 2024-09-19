@@ -1,3 +1,5 @@
+# File: .github/workflows/test-runner.yml
+
 name: Test Runner (Node, Python & C#)
 
 on:
@@ -32,27 +34,16 @@ jobs:
         - name: Checkout repository
           uses: actions/checkout@v4
         
-        - name: Install curl (if not available)
-          run: |
-            if ! command -v curl &> /dev/null; then
-              sudo apt-get update
-              sudo apt-get install -y curl
-            fi
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: '8.0.x'
 
-        - name: Install .NET SDK
-          run: |
-            # Download .NET SDK
-            curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
-            chmod +x dotnet-install.sh
-            ./dotnet-install.sh --channel 8.0 --install-dir $HOME/.dotnet
-            
-            # Add .NET to PATH
-            echo "$HOME/.dotnet" >> $GITHUB_PATH
-            echo "DOTNET_ROOT=$HOME/.dotnet" >> $GITHUB_ENV
+        - name: Restore dependencies
+          run: dotnet restore tests/csharp/HelloWorld.csproj
 
-        - name: Compile and Run C# Hello World
-          run: |
-            cd tests/csharp
-            dotnet new console --no-restore --force
-            cp hello-world.cs Program.cs
-            dotnet run
+        - name: Build
+          run: dotnet build tests/csharp/HelloWorld.csproj --configuration Release --no-restore
+
+        - name: Run
+          run: dotnet run --project tests/csharp/HelloWorld.csproj --configuration Release --no-build
