@@ -11,13 +11,13 @@ jobs:
   test-node:
     runs-on: [self-hosted, Linux]
     steps:
-        - uses: actions/checkout@v4
-        - name: Use Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: '20'
-        - name: Run hello-world.js
-          run: node tests/node/hello-world.js
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run hello-world.js
+        run: node tests/node/hello-world.js
 
   test-python:
     runs-on: [self-hosted, Linux]
@@ -32,12 +32,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Add .NET SDK to PATH
-        run: echo "/usr/share/dotnet" >> $GITHUB_PATH
       
-      - name: Verify .NET SDK version
-        run: dotnet --version
+      - name: Verify .NET SDK installation
+        run: |
+          dotnet --version
+          if [ $? -ne 0 ]; then
+            echo "Error: .NET SDK is not properly installed or configured."
+            exit 1
+          fi
 
       - name: Restore dependencies
         run: dotnet restore tests/csharp/HelloWorld.csproj
