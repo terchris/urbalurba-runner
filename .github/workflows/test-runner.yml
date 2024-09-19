@@ -1,5 +1,9 @@
 # File: .github/workflows/test-runner.yml
-name: Test Runner (Node, Python & C#)
+#
+# Purpose: This workflow runs tests for Node.js, Python, C#, and a Logic App in a local container.
+# It uses a self-hosted runner on Linux to execute these tests.
+
+name: Test Runner (Node, Python, C# & Logic App)
 
 on:
   push:
@@ -52,3 +56,32 @@ jobs:
 
       - name: Run project
         run: dotnet run --project tests/csharp/HelloWorld.csproj --configuration Release --no-build
+
+  test-logic-app:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Logic App container
+        run: docker build -t logic-app-test -f tests/logicapp/Dockerfile .
+
+      - name: Run Logic App container
+        run: docker run -d -p 8080:80 --name logic-app-container logic-app-test
+
+      - name: Wait for container to start
+        run: sleep 30
+
+      - name: Test Logic App
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/workflow_trigger)
+          if [ $RESPONSE -eq 200 ]; then
+            echo "Logic App test passed"
+          else
+            echo "Logic App test failed"
+            exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: docker stop logic-app-container && docker rm logic-app-container
