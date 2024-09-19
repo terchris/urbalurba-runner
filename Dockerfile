@@ -1,6 +1,9 @@
 # Use Ubuntu 22.04 as the base image
 FROM ubuntu:22.04
 
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install necessary dependencies
 RUN apt-get update && apt-get install -y \
     curl \
@@ -16,7 +19,22 @@ RUN apt-get update && apt-get install -y \
     sudo \
     libicu-dev \
     nodejs \
-    npm
+    npm \
+    wget \
+    gpg \
+    apt-transport-https
+
+# Add Microsoft package repository
+RUN wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb
+
+# Install .NET SDK 8
+RUN apt-get update && \
+    apt-get install -y dotnet-sdk-8.0
+
+# Install Azure Functions Core Tools using npm
+RUN npm install -g azure-functions-core-tools@4 --unsafe-perm true
 
 # Create a user for the runner
 RUN useradd -m github-runner && \
@@ -41,16 +59,8 @@ RUN ARCH=$(dpkg --print-architecture) && \
     tar xzf ./actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz && \
     rm actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz
 
-# Install latest debug package to resolve warning
-RUN sudo npm install -g debug@latest
-
-# Install Azure Functions Core Tools
-RUN sudo npm install -g azure-functions-core-tools@latest --unsafe-perm true && \
-    echo "export PATH=$PATH:/home/github-runner/.npm-global/bin" >> ~/.bashrc && \
-    . ~/.bashrc
-
 # Verify installations
-RUN npm list -g --depth=0 && \
+RUN dotnet --version && \
     func --version
 
 # Copy the startup script

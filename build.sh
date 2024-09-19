@@ -3,29 +3,75 @@
 #
 # Purpose: This script builds the urbalurba-runner Docker image for specified architectures.
 #
-# Usage: ./build.sh
+# Usage: ./build.sh [OPTIONS]
 #
-# Environment variables (set in .env file):
-#   BUILD_ARCHITECTURE: Determines which architectures to build for.
-#     Possible values:
-#       - "multi" or empty: Builds for both ARM64 and AMD64 (default)
-#       - "arm64": Builds only for ARM64
-#       - "amd64": Builds only for AMD64
-#       - "arm64,amd64": Explicitly specify multiple architectures
-#   CONTAINER_NAME: The name to use for the Docker container
+# Options:
+#   -a, --architecture ARCH   Specify the build architecture(s). 
+#                             Values: multi, arm64, amd64, or comma-separated list
+#   -t, --tag TAG             Specify the Docker image tag (default: latest)
+#   -p, --push                Push the image to the container registry
+#   -h, --help                Display this help message
 #
-# This script does the following:
-# 1. Loads environment variables from .env file
-# 2. Sets up Docker buildx for multi-architecture builds
-# 3. Determines which platforms to build for based on BUILD_ARCHITECTURE
-# 4. Builds the Docker image(s) locally
-# 5. Provides instructions for running the built container with the specified name
+# Environment variables (can be set in .env file):
+#   BUILD_ARCHITECTURE: Determines which architectures to build for if not specified via command line.
+#   CONTAINER_REGISTRY: The container registry to push to (if --push is used)
+#   CONTAINER_NAME: The name to use for the Docker image
 
 # Load environment variables
-source .env
+if [ -f .env ]; then
+    source .env
+fi
+
+# Default values
+TAG=${TAG:-latest}
+PUSH=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        -a|--architecture)
+        BUILD_ARCHITECTURE="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        -t|--tag)
+        TAG="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        -p|--push)
+        PUSH=true
+        shift # past argument
+        ;;
+        -h|--help)
+        echo "Usage: ./build.sh [OPTIONS]"
+        echo "Options:"
+        echo "  -a, --architecture ARCH   Specify the build architecture(s)"
+        echo "  -t, --tag TAG             Specify the Docker image tag (default: latest)"
+        echo "  -p, --push                Push the image to the container registry"
+        echo "  -h, --help                Display this help message"
+        exit 0
+        ;;
+        *)
+        echo "Unknown option: $1"
+        exit 1
+        ;;
+    esac
+done
+
+# Ensure CONTAINER_NAME is set
+if [ -z "$CONTAINER_NAME" ]; then
+    echo "Error: CONTAINER_NAME is not set. Please set it in .env file or as an environment variable."
+    exit 1
+fi
 
 # Create a new builder instance if it doesn't exist
-docker buildx create --name mybuilder --use
+if ! docker buildx inspect mybuilder > /dev/null 2>&1; then
+    docker buildx create --name mybuilder --use
+else
+    docker buildx use mybuilder
+fi
 
 # Determine the platforms to build for
 if [ "$BUILD_ARCHITECTURE" = "multi" ] || [ -z "$BUILD_ARCHITECTURE" ]; then
@@ -45,10 +91,39 @@ fi
 
 echo "Building for platforms: $PLATFORMS"
 
-# Build multi-architecture image locally
-docker buildx build --platform $PLATFORMS -t urbalurba-runner:latest \
-    --build-arg INSTALL_AZURE_FUNCTIONS=true \
-    --load .
+# Prepare the build command
+BUILD_CMD="docker buildx build --platform $PLATFORMS -t $CONTAINER_NAME:$TAG"
 
-echo "Build complete. You can now run the container using:"
-echo "docker run --name $CONTAINER_NAME --env-file .env urbalurba-runner:latest"
+# Add push flag if specified
+if [ "$PUSH" = true ]; then
+    if [ -z "$CONTAINER_REGISTRY" ]; then
+        echo "Error: CONTAINER_REGISTRY is not set. Please set it in .env file or as an environment variable."
+        exit 1
+    fi
+    BUILD_CMD+=" --push"
+    # Update the image name to include the registry
+    BUILD_CMD=${BUILD_CMD/"-t $CONTAINER_NAME:"/"-t $CONTAINER_REGISTRY/$CONTAINER_NAME:"}
+else
+    BUILD_CMD+=" --load"
+fi
+
+# Add the build context
+BUILD_CMD+=" ."
+
+# Execute the build command
+echo "Executing build command: $BUILD_CMD"
+eval $BUILD_CMD
+
+# Check if the build was successful
+if [ $? -eq 0 ]; then
+    echo "Build completed successfully."
+    if [ "$PUSH" = true ]; then
+        echo "Image pushed to $CONTAINER_REGISTRY/$CONTAINER_NAME:$TAG"
+    else
+        echo "You can now run the container using:"
+        echo "docker run --name $CONTAINER_NAME --env-file .env $CONTAINER_NAME:$TAG"
+    fi
+else
+    echo "Build failed."
+    exit 1
+fi
