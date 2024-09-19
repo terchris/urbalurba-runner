@@ -31,18 +31,20 @@ jobs:
     steps:
         - name: Checkout repository
           uses: actions/checkout@v4
-        - name: Setup .NET
-          uses: actions/setup-dotnet@v4
-          with:
-            dotnet-version: '8.0.x'
-            cache: true
+        
+        - name: Install .NET SDK
+          run: |
+            # Download .NET SDK
+            wget https://dot.net/v1/dotnet-install.sh
+            chmod +x dotnet-install.sh
+            ./dotnet-install.sh --channel 8.0 --install-dir $HOME/.dotnet
+            
+            # Add .NET to PATH
+            echo "$HOME/.dotnet" >> $GITHUB_PATH
+            echo "DOTNET_ROOT=$HOME/.dotnet" >> $GITHUB_ENV
 
-        - name: Compile C# Hello World
+        - name: Compile and Run C# Hello World
           run: |
             dotnet new console -o tests/csharp -n HelloWorld
             cp tests/csharp/hello-world.cs tests/csharp/Program.cs
-            dotnet restore tests/csharp
-            dotnet build tests/csharp
-
-        - name: Run C# Hello World
-          run: dotnet run --project tests/csharp
+            dotnet run --project tests/csharp
