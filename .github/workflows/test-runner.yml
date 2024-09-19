@@ -1,6 +1,6 @@
 # File: .github/workflows/test-runner.yml
 #
-# Purpose: This workflow runs tests for Node.js, Python, C#, and a Logic App in a local container.
+# Purpose: This workflow runs tests for Node.js, Python, C#, and a Logic App using Azure Functions Core Tools.
 # It uses a self-hosted runner on Linux to execute these tests.
 
 name: Test Runner (Node, Python, C# & Logic App)
@@ -63,18 +63,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Logic App container
-        run: docker build -t logic-app-test -f tests/logicapp/Dockerfile .
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-      - name: Run Logic App container
-        run: docker run -d -p 8080:80 --name logic-app-container logic-app-test
+      - name: Install Azure Functions Core Tools
+        run: |
+          npm install -g azure-functions-core-tools@4
+          func --version
 
-      - name: Wait for container to start
-        run: sleep 30
+      - name: Setup Logic App project
+        run: |
+          mkdir -p tests/logicapp/workflow
+          cp tests/logicapp/workflow.json tests/logicapp/workflow/
+          echo '{"IsEncrypted":false,"Values":{"AzureWebJobsStorage":"","FUNCTIONS_WORKER_RUNTIME":"node"}}' > tests/logicapp/workflow/local.settings.json
+
+      - name: Start Logic App
+        run: |
+          cd tests/logicapp/workflow
+          func start --javascript &
+          sleep 30
 
       - name: Test Logic App
         run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/workflow_trigger)
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:7071/api/workflow_trigger)
           if [ $RESPONSE -eq 200 ]; then
             echo "Logic App test passed"
           else
@@ -84,4 +97,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: docker stop logic-app-container && docker rm logic-app-container
+        run: pkill -f "func start"
