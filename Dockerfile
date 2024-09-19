@@ -33,9 +33,6 @@ RUN wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-p
 RUN apt-get update && \
     apt-get install -y dotnet-sdk-8.0
 
-# Install Azure Functions Core Tools using npm
-RUN npm install -g azure-functions-core-tools@4 --unsafe-perm true
-
 # Create a user for the runner
 RUN useradd -m github-runner && \
     usermod -aG sudo github-runner && \
@@ -45,23 +42,30 @@ RUN useradd -m github-runner && \
 USER github-runner
 WORKDIR /home/github-runner
 
+# Set up npm global installation directory
+RUN mkdir -p ~/.npm-global && \
+    npm config set prefix '~/.npm-global' && \
+    echo "export PATH=~/.npm-global/bin:$PATH" >> ~/.bashrc
+
+# Set up PATH for npm global installs
+ENV PATH="/home/github-runner/.npm-global/bin:${PATH}"
+
+# Clear npm cache, install latest debug, and install Azure Functions Core Tools
+RUN npm cache clean --force && \
+    npm install -g debug@latest && \
+    npm install -g azure-functions-core-tools@4 --unsafe-perm true --force
+
 # Download and install the latest GitHub Actions runner version
-RUN ARCH=$(dpkg --print-architecture) && \
-    case ${ARCH} in \
-        arm64) RUNNER_ARCH="arm64" ;; \
-        aarch64) RUNNER_ARCH="arm64" ;; \
-        x86_64) RUNNER_ARCH="x64" ;; \
-        amd64) RUNNER_ARCH="x64" ;; \
-        *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
-    esac && \
-    LATEST_VERSION=$(curl -s https://api.github.com/repos/actions/runner/releases/latest | jq -r .tag_name | sed 's/v//') && \
-    curl -O -L https://github.com/actions/runner/releases/download/v${LATEST_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz && \
-    tar xzf ./actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz && \
-    rm actions-runner-linux-${RUNNER_ARCH}-${LATEST_VERSION}.tar.gz
+RUN LATEST_VERSION=$(curl -s https://api.github.com/repos/actions/runner/releases/latest | jq -r .tag_name | sed 's/v//') && \
+    curl -O -L https://github.com/actions/runner/releases/download/v${LATEST_VERSION}/actions-runner-linux-arm64-${LATEST_VERSION}.tar.gz && \
+    tar xzf ./actions-runner-linux-arm64-${LATEST_VERSION}.tar.gz && \
+    rm actions-runner-linux-arm64-${LATEST_VERSION}.tar.gz
 
 # Verify installations
-RUN dotnet --version && \
-    func --version
+RUN . ~/.bashrc && \
+    dotnet --version && \
+    func --version && \
+    npm list -g --depth=0
 
 # Copy the startup script
 COPY --chown=github-runner:github-runner start.sh .

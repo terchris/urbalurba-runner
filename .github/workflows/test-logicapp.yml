@@ -5,13 +5,20 @@ on:
 
 jobs:
   test-logicapp:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up environment
+        run: |
+          echo "PATH=$PATH:/home/github-runner/.npm-global/bin" >> $GITHUB_ENV
+          . ~/.bashrc
+
       - name: Verify Azure Functions Core Tools installation
-        run: func --version
+        run: |
+          which func
+          func --version
 
       - name: Start Logic App
         run: |
