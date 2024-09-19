@@ -9,19 +9,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-tests:
-    runs-on: [self-hosted, Linux]
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Run Node.js Test
-        uses: ./.github/workflows/test-node.yml
+  test-node:
+    uses: ./.github/workflows/test-node.yml
 
-      - name: Run Python Test
-        uses: ./.github/workflows/test-python.yml
+  test-python:
+    uses: ./.github/workflows/test-python.yml
 
-      - name: Run C# Test
-        uses: ./.github/workflows/test-csharp.yml
+  test-csharp:
+    uses: ./.github/workflows/test-csharp.yml
 
-      - name: Run Logic App Test
-        uses: ./.github/workflows/test-logicapp.yml
+  test-logic-app:
+    uses: ./.github/workflows/test-logicapp.yml
