@@ -6,7 +6,7 @@ on:
   workflow_call:
 
 jobs:
-  test-logic-app:
+  test-logicapp:
     runs-on: [self-hosted, Linux]
     steps:
       - name: Checkout repository
@@ -17,9 +17,14 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Verify Node.js and npm installation
+        run: |
+          node --version
+          npm --version
+
       - name: Install Azure Functions Core Tools
         run: |
-          sudo npm install -g azure-functions-core-tools@4
+          sudo npm install -g azure-functions-core-tools@4 --unsafe-perm true
           echo "PATH=$PATH:/home/github-runner/.npm-global/bin" >> $GITHUB_ENV
           source $GITHUB_ENV
           func --version
@@ -49,4 +54,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: pkill -f "func start"
+        run: pkill -f "func start" || true
